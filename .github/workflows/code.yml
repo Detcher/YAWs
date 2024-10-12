@@ -1,0 +1,34 @@
+name: "Code check"
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  format-check:
+    name: Run clang-format
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install clang-format
+      run: sudo apt-get install -y clang-format
+
+    - name: Run clang-format and check for formatting issues
+      run: |
+        clang-format --version
+        find . -name '*.cpp' -o -name '*.h' | xargs clang-format -i
+
+    - name: Commit changes (if any)
+      if: always()  # This step runs even if the previous one fails
+      run: |
+        git config --global user.name "github-actions"
+        git config --global user.email "github-actions@github.com"
+        git diff
+        if [ ! -z "$(git status --porcelain)" ]; then
+          git add .
+          git commit -m "Apply clang-format"
+          git push origin master
+        fi
